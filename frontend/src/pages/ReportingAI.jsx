@@ -1,234 +1,723 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { projectAPI, reportAPI } from '../config/api';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'react-toastify';
 
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const slideUp = keyframes`
+  from { 
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
+
+const slideInLeft = keyframes`
+  from { 
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const slideInRight = keyframes`
+  from { 
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+`;
+
+const float = keyframes`
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+`;
+
+const typing = keyframes`
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+`;
+
+const glass = css`
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 25px 50px rgba(106, 130, 251, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+`;
+
 const PageContainer = styled.div`
-  max-width: 1200px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 118, 117, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(106, 130, 251, 0.2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+`;
+
+const FloatingElements = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: ${float} 6s ease-in-out infinite;
+  }
+  
+  &::before {
+    width: 150px;
+    height: 150px;
+    top: 10%;
+    left: 5%;
+    animation-delay: -2s;
+  }
+  
+  &::after {
+    width: 100px;
+    height: 100px;
+    bottom: 15%;
+    right: 8%;
+    animation-delay: -4s;
+  }
+`;
+
+const ContentWrapper = styled.div`
+  max-width: 1400px;
   margin: 0 auto;
-  padding: var(--spacing-4);
+  position: relative;
+  z-index: 1;
 `;
 
 const PageHeader = styled.div`
+  ${glass}
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-6);
+  margin-bottom: 2rem;
+  padding: 2rem 3rem;
+  border-radius: 2rem;
+  animation: ${slideUp} 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+    border-radius: 4px 4px 0 0;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+  }
 `;
 
 const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 500;
-  color: var(--neutral-900);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  letter-spacing: 0.5px;
+  
+  &::before {
+    content: '🤖';
+    font-size: 2.5rem;
+    padding: 0.8rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    box-shadow: 0 6px 24px rgba(106, 130, 251, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    text-align: center;
+  }
 `;
 
 const ProjectSelector = styled.select`
-  padding: var(--spacing-2) var(--spacing-3);
-  border: 1px solid var(--neutral-300);
-  border-radius: var(--border-radius-md);
-  background-color: white;
-  min-width: 200px;
-`;
-
-const ChatContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 200px);
-  background-color: white;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--neutral-200);
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-`;
-
-const MessagesContainer = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-4);
-`;
-
-const MessageBubble = styled.div`
-  max-width: 80%;
-  padding: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
-  border-radius: var(--border-radius-lg);
-  
-  ${props => props.isUser ? `
-    background-color: var(--primary-light);
-    color: var(--primary-dark);
-    align-self: flex-end;
-    margin-left: auto;
-  ` : `
-    background-color: var(--neutral-100);
-    color: var(--neutral-800);
-    align-self: flex-start;
-    margin-right: auto;
-  `}
-`;
-
-const MessageInput = styled.div`
-  display: flex;
-  padding: var(--spacing-3);
-  border-top: 1px solid var(--neutral-200);
-`;
-
-const Input = styled.input`
-  flex: 1;
-  padding: var(--spacing-3);
-  border: 1px solid var(--neutral-300);
-  border-radius: var(--border-radius-md);
-  margin-right: var(--spacing-2);
-`;
-
-const Button = styled.button`
-  padding: var(--spacing-3) var(--spacing-5);
-  background-color: ${props => props.primary ? 'var(--primary)' : 'white'};
-  color: ${props => props.primary ? 'white' : 'var(--neutral-800)'};
-  border: 1px solid ${props => props.primary ? 'var(--primary)' : 'var(--neutral-300)'};
-  border-radius: var(--border-radius-md);
+  padding: 1rem 1.5rem;
+  border: 2px solid rgba(106, 130, 251, 0.15);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  font-size: 1rem;
   font-weight: 500;
+  color: #1a1a1a;
+  min-width: 250px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   
-  &:hover {
-    background-color: ${props => props.primary ? 'var(--primary-dark)' : 'var(--neutral-100)'};
+  &:focus {
+    outline: none;
+    border-color: #6a82fb;
+    box-shadow: 0 0 0 4px rgba(106, 130, 251, 0.1);
+    transform: translateY(-2px);
   }
   
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &:hover {
+    border-color: rgba(106, 130, 251, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  option {
+    background: white;
+    color: #1a1a1a;
+    padding: 0.5rem;
+  }
+`;
+
+const MainContent = styled.div`
+  ${glass}
+  border-radius: 2rem;
+  padding: 3rem;
+  animation: ${slideUp} 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+  }
+`;
+
+const Tabs = styled.div`
+  display: flex;
+  margin-bottom: 2.5rem;
+  background: rgba(106, 130, 251, 0.05);
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(106, 130, 251, 0.1);
+`;
+
+const Tab = styled.div`
+  flex: 1;
+  padding: 1rem 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 1rem;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  
+  ${props => props.active ? css`
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(106, 130, 251, 0.3);
+    transform: translateY(-2px);
+  ` : css`
+    color: #6a82fb;
+    
+    &:hover {
+      background: rgba(106, 130, 251, 0.1);
+      transform: translateY(-1px);
+    }
+  `}
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover::after {
+    left: 100%;
   }
 `;
 
 const ReportTypeSelector = styled.div`
-  display: flex;
-  gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
 `;
 
 const ReportTypeButton = styled.button`
-  padding: var(--spacing-2) var(--spacing-3);
-  background-color: ${props => props.selected ? 'var(--primary)' : 'white'};
-  color: ${props => props.selected ? 'white' : 'var(--neutral-800)'};
-  border: 1px solid ${props => props.selected ? 'var(--primary)' : 'var(--neutral-300)'};
-  border-radius: var(--border-radius-md);
-  font-weight: 500;
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: none;
+  position: relative;
+  overflow: hidden;
   
-  &:hover {
-    background-color: ${props => props.selected ? 'var(--primary-dark)' : 'var(--neutral-100)'};
+  ${props => props.selected ? css`
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    color: white;
+    box-shadow: 0 6px 24px rgba(106, 130, 251, 0.3);
+    transform: translateY(-2px);
+  ` : css`
+    background: rgba(255, 255, 255, 0.8);
+    color: #6a82fb;
+    border: 2px solid rgba(106, 130, 251, 0.15);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(106, 130, 251, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(106, 130, 251, 0.2);
+    }
+  `}
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover::after {
+    left: 100%;
   }
 `;
 
 const SuggestedPrompts = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
+  gap: 1rem;
+  margin-bottom: 2rem;
 `;
 
 const PromptChip = styled.div`
-  padding: var(--spacing-2) var(--spacing-3);
-  background-color: var(--neutral-100);
-  border-radius: var(--border-radius-full);
-  font-size: 14px;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, rgba(106, 130, 251, 0.1) 0%, rgba(252, 92, 125, 0.1) 100%);
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 1px solid rgba(106, 130, 251, 0.2);
+  color: #6a82fb;
+  position: relative;
+  overflow: hidden;
   
   &:hover {
-    background-color: var(--neutral-200);
+    background: linear-gradient(135deg, rgba(106, 130, 251, 0.2) 0%, rgba(252, 92, 125, 0.2) 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 16px rgba(106, 130, 251, 0.2);
+    color: #fc5c7d;
+  }
+  
+  &::before {
+    content: '💡';
+    margin-right: 0.5rem;
   }
 `;
 
-const SaveReportButton = styled(Button)`
-  margin-left: var(--spacing-2);
-`;
-
-const Tabs = styled.div`
+const ChatContainer = styled.div`
   display: flex;
-  margin-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--neutral-300);
+  flex-direction: column;
+  height: 600px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(106, 130, 251, 0.15);
+  overflow: hidden;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+  }
 `;
 
-const Tab = styled.div`
-  padding: var(--spacing-3) var(--spacing-5);
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid ${props => props.active ? 'var(--primary)' : 'transparent'};
-  color: ${props => props.active ? 'var(--primary)' : 'var(--neutral-700)'};
+const MessagesContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   
-  &:hover {
-    color: var(--primary);
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(106, 130, 251, 0.1);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    border-radius: 4px;
+  }
+`;
+
+const MessageBubble = styled.div`
+  max-width: 80%;
+  padding: 1.5rem 2rem;
+  border-radius: 1.5rem;
+  position: relative;
+  animation: ${props => props.isUser ? slideInRight : slideInLeft} 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  ${props => props.isUser ? css`
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+    box-shadow: 0 4px 16px rgba(106, 130, 251, 0.3);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      right: 20px;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 15px solid #fc5c7d;
+    }
+  ` : css`
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    color: #2a2a2a;
+    align-self: flex-start;
+    margin-right: auto;
+    border: 1px solid rgba(106, 130, 251, 0.15);
+    box-shadow: 0 4px 16px rgba(106, 130, 251, 0.1);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 15px solid rgba(255, 255, 255, 0.9);
+    }
+  `}
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: ${props => props.isUser ? 'white' : '#1a1a1a'};
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  
+  code {
+    background: ${props => props.isUser ? 'rgba(255, 255, 255, 0.2)' : 'rgba(106, 130, 251, 0.1)'};
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.3rem;
+    font-size: 0.9rem;
+  }
+`;
+
+const TypingIndicator = styled(MessageBubble)`
+  animation: none;
+  
+  &::after {
+    content: '...';
+    animation: ${typing} 1.5s infinite;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+`;
+
+const MessageInput = styled.div`
+  display: flex;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(106, 130, 251, 0.15);
+  gap: 1rem;
+`;
+
+const Input = styled.input`
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: 2px solid rgba(106, 130, 251, 0.15);
+  border-radius: 1rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  &::placeholder {
+    color: #6a82fb;
+    opacity: 0.7;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #6a82fb;
+    box-shadow: 0 0 0 4px rgba(106, 130, 251, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const Button = styled.button`
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.3px;
+  
+  ${props => props.primary ? css`
+    background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(106, 130, 251, 0.3);
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 32px rgba(106, 130, 251, 0.4);
+    }
+  ` : css`
+    background: rgba(255, 255, 255, 0.9);
+    color: #6a82fb;
+    border: 2px solid rgba(106, 130, 251, 0.2);
+    
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(106, 130, 251, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(106, 130, 251, 0.2);
+    }
+  `}
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover:not(:disabled)::after {
+    left: 100%;
   }
 `;
 
 const SavedReportsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-4);
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
 `;
 
 const ReportCard = styled.div`
-  background-color: white;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--neutral-200);
-  padding: var(--spacing-4);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  ${glass}
+  border-radius: 1.5rem;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  animation: ${slideUp} 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+  }
   
   &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-color: var(--neutral-300);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 32px 64px rgba(106, 130, 251, 0.2),
+      0 12px 48px rgba(0, 0, 0, 0.1);
   }
 `;
 
 const ReportCardTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: var(--spacing-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  
+  &::before {
+    content: '📊';
+    font-size: 1.2rem;
+  }
 `;
 
 const ReportCardMeta = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-3);
-  font-size: 14px;
-  color: var(--neutral-600);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+`;
+
+const ReportTag = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(106, 130, 251, 0.1) 0%, rgba(252, 92, 125, 0.1) 100%);
+  color: #6a82fb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(106, 130, 251, 0.2);
+  text-transform: capitalize;
+  
+  &::before {
+    content: '🏷️';
+    font-size: 0.9rem;
+  }
+`;
+
+const ReportDate = styled.span`
+  font-size: 0.9rem;
+  color: #6a82fb;
+  opacity: 0.8;
+  font-weight: 500;
+`;
+
+const ReportPreview = styled.div`
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(106, 130, 251, 0.05);
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  color: #4a4a4a;
+  line-height: 1.6;
+  height: 120px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  border: 1px solid rgba(106, 130, 251, 0.1);
 `;
 
 const ReportCardActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-2);
+  gap: 1rem;
 `;
 
-const ReportTag = styled.span`
-  display: inline-block;
-  padding: var(--spacing-1) var(--spacing-2);
-  background-color: var(--primary-light);
-  color: var(--primary-dark);
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: var(--border-radius-full);
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6a82fb;
+  font-size: 1.1rem;
+  
+  &::before {
+    content: '📝';
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
 `;
 
-const ReportPreview = styled.div`
-  margin-top: var(--spacing-3);
-  padding: var(--spacing-3);
-  background-color: var(--neutral-50);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  color: var(--neutral-700);
-  height: 80px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+const LoadingState = styled.div`
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6a82fb;
+  font-size: 1.1rem;
+  
+  &::before {
+    content: '⏳';
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+    animation: ${pulse} 2s ease-in-out infinite;
+  }
 `;
 
 // Define report types
@@ -393,55 +882,55 @@ const ReportingAI = () => {
   };
   
   // In ReportingAI.jsx
-const handleSendMessage = async () => {
-  if (!input.trim() || !selectedProject) return;
-  
-  // Add user message to chat
-  const userMessage = { id: Date.now(), text: input, isUser: true };
-  setMessages(prev => [...prev, userMessage]);
-  
-  // Clear input
-  setInput('');
-  
-  // Show loading state
-  setLoading(true);
-  
-  try {
-      console.log('Generating report with:', {
-          projectId: selectedProject,
-          prompt: input,
-          type: reportType
-      });
-      
-      // Call API to generate report
-      const response = await reportAPI.generate(selectedProject, input, reportType);
-      console.log('API response:', response);
-      
-      if (response.data && response.data.content) {
-          // Add the response to messages
-          setMessages(prev => [...prev, {
-              id: Date.now(),
-              text: response.data.content,
-              isUser: false,
-              reportData: response.data
-          }]);
-      } else {
-          throw new Error('Empty or invalid response from API');
-      }
-      
-  } catch (error) {
-      console.error('Error generating report:', error);
-      
-      // Add more detailed error message
-      setMessages(prev => [...prev, {
-          id: Date.now(),
-          text: `I'm sorry, I encountered an error while generating your report: ${error.message || 'Unknown error'}. Please try again.`,
-          isUser: false
-      }]);
-  } finally {
-      setLoading(false);
-  }
-};
+  const handleSendMessage = async () => {
+    if (!input.trim() || !selectedProject) return;
+    
+    // Add user message to chat
+    const userMessage = { id: Date.now(), text: input, isUser: true };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Clear input
+    setInput('');
+    
+    // Show loading state
+    setLoading(true);
+    
+    try {
+        console.log('Generating report with:', {
+            projectId: selectedProject,
+            prompt: input,
+            type: reportType
+        });
+        
+        // Call API to generate report
+        const response = await reportAPI.generate(selectedProject, input, reportType);
+        console.log('API response:', response);
+        
+        if (response.data && response.data.content) {
+            // Add the response to messages
+            setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: response.data.content,
+                isUser: false,
+                reportData: response.data
+            }]);
+        } else {
+            throw new Error('Empty or invalid response from API');
+        }
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        
+        // Add more detailed error message
+        setMessages(prev => [...prev, {
+            id: Date.now(),
+            text: `I'm sorry, I encountered an error while generating your report: ${error.message || 'Unknown error'}. Please try again.`,
+            isUser: false
+        }]);
+    } finally {
+        setLoading(false);
+    }
+  };
   
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -516,7 +1005,7 @@ const handleSendMessage = async () => {
                       <ReactMarkdown>{message.text}</ReactMarkdown>
                       {message.reportData && (
                         <Button 
-                          style={{ marginTop: 'var(--spacing-2)' }}
+                          style={{ marginTop: '1rem' }}
                           onClick={() => handleSaveReport(message)}
                         >
                           Save Report
@@ -527,9 +1016,9 @@ const handleSendMessage = async () => {
                 </MessageBubble>
               ))}
               {loading && (
-                <MessageBubble isUser={false}>
-                  Generating report...
-                </MessageBubble>
+                <TypingIndicator isUser={false}>
+                  <span>Generating report</span>
+                </TypingIndicator>
               )}
               <div ref={messagesEndRef} />
             </MessagesContainer>
@@ -558,19 +1047,19 @@ const handleSendMessage = async () => {
       return (
         <SavedReportsContainer>
           {loading ? (
-            <div>Loading saved reports...</div>
+            <LoadingState>Loading saved reports...</LoadingState>
           ) : savedReports.length === 0 ? (
-            <div>No saved reports for this project yet. Generate some reports first!</div>
+            <EmptyState>No saved reports for this project yet. Generate some reports first!</EmptyState>
           ) : (
             savedReports.map(report => (
               <ReportCard key={report.id}>
                 <ReportCardTitle>{report.title}</ReportCardTitle>
                 <ReportCardMeta>
                   <ReportTag>{report.type.replace('_', ' ')}</ReportTag>
-                  <span>{formatDate(report.createdAt)}</span>
+                  <ReportDate>{formatDate(report.createdAt)}</ReportDate>
                 </ReportCardMeta>
                 <ReportPreview>
-                  {report.content.substring(0, 150)}...
+                  {report.content.substring(0, 200)}...
                 </ReportPreview>
                 <ReportCardActions>
                   <Button onClick={() => handleDeleteReport(report.id)}>Delete</Button>
@@ -586,48 +1075,51 @@ const handleSendMessage = async () => {
 
   return (
     <PageContainer>
-      <PageHeader>
-        <PageTitle>AI Project Reporting</PageTitle>
-        <ProjectSelector 
-          value={selectedProject} 
-          onChange={handleProjectChange}
-        >
-          <option value="">Select a project</option>
-          {projects.map(project => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </ProjectSelector>
-      </PageHeader>
-      
-      {!selectedProject ? (
-        <div style={{ textAlign: 'center', padding: 'var(--spacing-10)' }}>
-          Please select a project to generate or view reports
-        </div>
-      ) : (
-        <>
-          <Tabs>
-            <Tab 
-              active={activeTab === 'generate'} 
-              onClick={() => setActiveTab('generate')}
-            >
-              Generate Report
-            </Tab>
-            <Tab 
-              active={activeTab === 'saved'} 
-              onClick={() => {
-                setActiveTab('saved');
-                fetchSavedReports();
-              }}
-            >
-              Saved Reports
-            </Tab>
-          </Tabs>
-          
-          {renderTabContent()}
-        </>
-      )}
+      <FloatingElements />
+      <ContentWrapper>
+        <PageHeader>
+          <PageTitle>AI Project Reporting</PageTitle>
+          <ProjectSelector 
+            value={selectedProject} 
+            onChange={handleProjectChange}
+          >
+            <option value="">Select a project</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </ProjectSelector>
+        </PageHeader>
+        
+        {!selectedProject ? (
+          <MainContent>
+            <EmptyState>Please select a project to generate or view reports</EmptyState>
+          </MainContent>
+        ) : (
+          <MainContent>
+            <Tabs>
+              <Tab 
+                active={activeTab === 'generate'} 
+                onClick={() => setActiveTab('generate')}
+              >
+                Generate Report
+              </Tab>
+              <Tab 
+                active={activeTab === 'saved'} 
+                onClick={() => {
+                  setActiveTab('saved');
+                  fetchSavedReports();
+                }}
+              >
+                Saved Reports
+              </Tab>
+            </Tabs>
+            
+            {renderTabContent()}
+          </MainContent>
+        )}
+      </ContentWrapper>
     </PageContainer>
   );
 };

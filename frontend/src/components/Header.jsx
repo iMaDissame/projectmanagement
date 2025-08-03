@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+const glass = css`
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1.5px 6px rgba(0,0,0,0.03);
+`;
 
 const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-4);
-  background-color: var(--neutral-0);
-  border-bottom: 1px solid var(--neutral-200);
-  box-shadow: var(--shadow-sm);
+  padding: 1.2rem 2.5rem;
+  ${glass}
+  border-bottom: 1.5px solid #e3e8ee;
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: 100;
 `;
 
 const LeftSection = styled.div`
@@ -29,11 +34,10 @@ const MobileMenuButton = styled.button`
   display: none;
   background: none;
   border: none;
-  color: var(--neutral-800);
-  font-size: 20px;
+  color: #2d3748;
+  font-size: 2rem;
   cursor: pointer;
-  margin-right: var(--spacing-4);
-  
+  margin-right: 1.5rem;
   @media (max-width: 768px) {
     display: block;
   }
@@ -41,148 +45,175 @@ const MobileMenuButton = styled.button`
 
 const SearchBar = styled.div`
   position: relative;
-  margin-left: var(--spacing-4);
-  
+  margin-left: 1.5rem;
   @media (max-width: 768px) {
     display: none;
   }
 `;
 
 const SearchInput = styled.input`
-  padding: var(--spacing-2) var(--spacing-2) var(--spacing-2) var(--spacing-8);
-  border: 1px solid var(--neutral-300);
-  border-radius: var(--border-radius-md);
-  width: 300px;
-  background-color: var(--neutral-100);
-  
+  padding: 0.7rem 1.2rem 0.7rem 2.5rem;
+  border: none;
+  border-radius: 2rem;
+  width: 270px;
+  background: rgba(245, 247, 250, 0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  font-size: 1rem;
+  color: #222;
+  transition: box-shadow 0.2s, background 0.2s;
   &:focus {
     outline: none;
-    border-color: var(--primary-light);
-    background-color: var(--neutral-0);
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   }
 `;
 
 const SearchIcon = styled.span`
   position: absolute;
-  left: 10px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--neutral-600);
+  color: #a0aec0;
+  font-size: 1.1rem;
+  pointer-events: none;
 `;
 
 const CreateButton = styled.button`
   display: flex;
   align-items: center;
-  background-color: var(--primary);
-  color: white;
+  background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+  color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: 1.5rem;
+  padding: 0.7rem 1.7rem;
+  font-weight: 600;
+  font-size: 1.05rem;
+  box-shadow: 0 2px 8px rgba(252,92,125,0.08);
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  
+  margin-right: 0.8rem;
+  transition: background 0.2s, transform 0.15s;
   &:hover {
-    background-color: var(--primary-dark);
+    background: linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 
 const UserProfile = styled.div`
   display: flex;
   align-items: center;
-  margin-left: var(--spacing-4);
+  margin-left: 1.5rem;
   position: relative;
 `;
 
 const Avatar = styled.div`
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background-color: var(--primary-lightest);
-  color: var(--primary);
+  background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 1.1rem;
   cursor: pointer;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px rgba(106,130,251,0.12);
+  transition: box-shadow 0.2s;
+  &:hover {
+    box-shadow: 0 4px 16px rgba(252,92,125,0.18);
+  }
 `;
 
 const UserMenu = styled.div`
   position: absolute;
-  top: 100%;
+  top: 120%;
   right: 0;
-  margin-top: var(--spacing-2);
-  background-color: var(--neutral-0);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-lg);
-  width: 200px;
-  z-index: var(--z-dropdown);
+  margin-top: 0.5rem;
+  background: rgba(255,255,255,0.98);
+  border-radius: 1.1rem;
+  box-shadow: 0 8px 32px rgba(106,130,251,0.13);
+  width: 210px;
+  z-index: 200;
   overflow: hidden;
-  transition: all 0.2s;
   opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
   transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all 0.22s cubic-bezier(.4,0,.2,1);
+  backdrop-filter: blur(8px);
 `;
 
 const UserMenuItem = styled.div`
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: 1.1rem 1.5rem;
   cursor: pointer;
-  transition: background-color 0.2s;
-  
+  font-size: 1.01rem;
+  color: #2d3748;
+  background: transparent;
+  transition: background 0.18s, color 0.18s;
   &:hover {
-    background-color: var(--neutral-100);
+    background: #f7fafc;
+    color: #6a82fb;
   }
-  
   &.logout {
-    border-top: 1px solid var(--neutral-200);
-    color: var(--error);
+    border-top: 1px solid #e3e8ee;
+    color: #fc5c7d;
+    font-weight: 600;
+    &:hover {
+      background: #fff0f3;
+      color: #fc5c7d;
+    }
   }
 `;
 
 const Header = ({ user, onLogout, toggleSidebar }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  
-  const toggleUserMenu = () => {
-    setUserMenuOpen(!userMenuOpen);
-  };
-  
-  const handleClickOutside = () => {
-    if (userMenuOpen) setUserMenuOpen(false);
-  };
-  
+
+  const toggleUserMenu = () => setUserMenuOpen(!userMenuOpen);
+
   const getInitials = (name) => {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  // Optional: close menu on click outside
+  React.useEffect(() => {
+    const handleClick = (e) => {
+      if (!e.target.closest('.user-profile-menu') && userMenuOpen) {
+        setUserMenuOpen(false);
+      }
+    };
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClick);
+    }
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [userMenuOpen]);
+
   return (
     <HeaderContainer>
       <LeftSection>
         <MobileMenuButton onClick={toggleSidebar}>
-          ☰
+          <span role="img" aria-label="menu">☰</span>
         </MobileMenuButton>
-        
         <SearchBar>
-          <SearchIcon>🔍</SearchIcon>
+          <SearchIcon>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="7"/><line x1="12.5" y1="12.5" x2="17" y2="17"/></svg>
+          </SearchIcon>
           <SearchInput 
             type="text" 
             placeholder="Search tasks, projects, or people" 
           />
         </SearchBar>
       </LeftSection>
-      
       <RightSection>
         <Link to="/projects/create">
           <CreateButton>
             + Create
           </CreateButton>
         </Link>
-        
-        <UserProfile>
+        <UserProfile className="user-profile-menu">
           <Avatar onClick={toggleUserMenu}>
             {getInitials(user?.name)}
           </Avatar>
-          
           <UserMenu isOpen={userMenuOpen}>
             <UserMenuItem>
               <Link to="/profile" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
