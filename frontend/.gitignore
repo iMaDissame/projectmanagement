@@ -44,3 +44,4 @@ pnpm-debug.log*
 # react native
 .expo/
 .env
+*.env
