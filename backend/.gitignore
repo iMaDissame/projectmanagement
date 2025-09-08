@@ -18,7 +18,9 @@ target/
 *.iws
 *.iml
 *.ipr
-
+# Ignore IDE/editor config
+.idea/
+.vscode/
 .idea/compiler.xml
 .idea/encodings.xml
 .idea/jarRepositories.xml

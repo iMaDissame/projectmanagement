@@ -1,3 +1,6 @@
+# Ignore IDE/editor config
+.idea/
+.vscode/
 # dependencies
 /node_modules
 
