@@ -230,4 +230,20 @@ public void i_should_see_the_saved_report() {
         .until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(),'Report') or contains(text(),'Show me a summary')]")));
     assertTrue(driver.getPageSource().contains("Report") || driver.getPageSource().contains("Show me a summary"));
 }
+@Given("I am logged in")
+public void i_am_logged_in() {
+    driver.get("http://localhost:3000/login");
+    driver.findElement(By.name("email")).sendKeys("testuserb@example.com");
+    driver.findElement(By.name("password")).sendKeys("AZDZS@#FCV. u6VV");
+    driver.findElement(By.cssSelector("button[type='submit']")).click();
+    new WebDriverWait(driver, Duration.ofSeconds(10))
+        .until(ExpectedConditions.urlContains("/dashboard"));
+}
+@When("I select the project {string}")
+public void i_select_the_project(String projectName) {
+    // Wait for the project card to appear and click it
+    new WebDriverWait(driver, Duration.ofSeconds(10))
+        .until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(),'" + projectName + "')]")));
+    driver.findElement(By.xpath("//*[contains(text(),'" + projectName + "')]")).click();
+}
 }

@@ -1,0 +1,33 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Cucumber Suite">
+    <test name="Signup">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.SignupTest"/>
+        </classes>
+    </test>
+    <test name="Login">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.LoginTest"/>
+        </classes>
+    </test>
+    <test name="AddProject">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.AddProjectTest"/>
+        </classes>
+    </test>
+    <test name="AddTask">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.AddTaskTest"/>
+        </classes>
+    </test>
+    <test name="AddComment">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.AddCommentTest"/>
+        </classes>
+    </test>
+    <test name="GenerateReport">
+        <classes>
+            <class name="com.jiraclone.backend.cucumber.GenerateReportTest"/>
+        </classes>
+    </test>
+</suite>

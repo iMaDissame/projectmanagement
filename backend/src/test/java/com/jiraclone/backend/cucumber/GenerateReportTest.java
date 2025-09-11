@@ -1,4 +1,10 @@
 package com.jiraclone.backend.cucumber;
 
-public class GenerateReportTest {
-}
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+
+@CucumberOptions(
+        features = "src/test/resources/features/generate_report.feature",
+        glue = "com.jiraclone.backend.cucumber"
+)
+public class GenerateReportTest extends AbstractTestNGCucumberTests {}
